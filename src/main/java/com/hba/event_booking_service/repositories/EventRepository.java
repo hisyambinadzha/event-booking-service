@@ -20,4 +20,6 @@ public interface EventRepository extends MongoRepository<Event, String> {
     Page<Event> findAll(Pageable pageable);
 
     Page<Event> findByCategory(String category, Pageable pageable);
+
+    boolean existsByTitle(String title);
 }

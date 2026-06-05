@@ -1,5 +1,8 @@
 package com.hba.event_booking_service.services;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -7,7 +10,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.hba.event_booking_service.dtos.CreateEventRequest;
+import com.hba.event_booking_service.enums.EventStatus;
 import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventNotFoundException;
 import com.hba.event_booking_service.exceptions.GlobalExceptionHandler.NotFoundException;
 import com.hba.event_booking_service.models.entities.Event;
@@ -27,7 +33,7 @@ public class EventService {
 
         List<String> categories = eventRepository.findDistinctCategories();
         if (categories.isEmpty()) {
-           throw new NotFoundException("Event categories not found");
+            throw new NotFoundException("Event categories not found");
         }
 
         logger.info("Found {} event categories", categories.size());
@@ -103,4 +109,47 @@ public class EventService {
         logger.info("Found {} events", events.getTotalElements());
         return events;
     }
+
+    public Event createEvent(CreateEventRequest request) throws IOException {
+
+        // ✅ Validation
+        if (eventRepository.existsByTitle(request.getTitle())) {
+            throw new RuntimeException("Event title already exists");
+        }
+
+        if (request.getEventDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Event date cannot be in the past");
+        }
+
+        // ✅ Image handling
+        String imagePath = null;
+
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String fileName = System.currentTimeMillis() + "_" + request.getImage().getOriginalFilename();
+
+            java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+
+            java.nio.file.Files.createDirectories(path.getParent());
+            java.nio.file.Files.write(path, request.getImage().getBytes());
+
+            imagePath = "/uploads/" + fileName;
+        }
+
+        // ✅ Build entity
+        Event event = new Event();
+        event.setTitle(request.getTitle());
+        event.setDescription(request.getDescription());
+        event.setCategory(request.getCategory());
+        event.setVenue(request.getVenue());
+        event.setEventDate(request.getEventDate());
+        event.setPrice(request.getPrice());
+        event.setCapacity(request.getCapacity());
+        event.setSeatsAvailable(request.getCapacity());
+        event.setStatus(request.getStatus());
+        event.setCreatedAt(LocalDateTime.now());
+        event.setImage(imagePath);
+
+        return eventRepository.save(event);
+    }
+
 }
