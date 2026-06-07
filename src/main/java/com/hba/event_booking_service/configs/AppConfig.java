@@ -46,8 +46,8 @@ public class AppConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/api/auth/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/**", "/uploads/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/**").permitAll()
                         // Events
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/events/**").authenticated()

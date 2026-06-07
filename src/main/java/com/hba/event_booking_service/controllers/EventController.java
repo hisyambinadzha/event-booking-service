@@ -1,14 +1,8 @@
 package com.hba.event_booking_service.controllers;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.io.IOException;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -19,18 +13,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.hba.event_booking_service.components.ApiResponseBuilder;
 import com.hba.event_booking_service.components.ErrorCatalog;
 import com.hba.event_booking_service.dtos.CreateEventRequest;
-import com.hba.event_booking_service.dtos.EventRequest;
-import com.hba.event_booking_service.enums.EventStatus;
 import com.hba.event_booking_service.exceptions.GlobalExceptionHandler.InternalServerException;
 import com.hba.event_booking_service.models.entities.Event;
 import com.hba.event_booking_service.services.EventService;
@@ -40,7 +28,6 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
-    private final Logger logger = LoggerFactory.getLogger(EventController.class);
     private final EventService eventService;
     private final ApiResponseBuilder apiResponseBuilder;
 
@@ -94,57 +81,21 @@ public class EventController {
         }
     }
 
-    @PostMapping
-    public ResponseEntity<Object> createEvent(@Valid @RequestBody EventRequest request) {
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<Object> createEvent(@Valid @ModelAttribute CreateEventRequest request) throws IOException {
         try {
-            // Get current date
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Kuala_Lumpur"));
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-            LocalDateTime createdAt = now.toLocalDateTime();
-            logger.info("Current date: {}", now.format(formatter));
-
-            // Create event
-            Event event = new Event();
-            event.setTitle(request.getTitle());
-            event.setDescription(request.getDescription());
-            event.setCategory(request.getCategory());
-            event.setVenue(request.getVenue());
-            event.setEventDate(request.getEventDate());
-            event.setPrice(request.getPrice());
-            event.setCapacity(request.getCapacity());
-            event.setStatus(EventStatus.OPEN);
-            event.setSeatsAvailable(request.getCapacity());
-            event.setCreatedAt(createdAt);
-            event.setImage(request.getImage());
-
-            // Save event
-            Event newEvent = eventService.createEvent(event);
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(apiResponseBuilder.result(ErrorCatalog._000, newEvent));
+            Event event = eventService.createEvent(request);
+            return ResponseEntity.status(HttpStatus.OK).body(apiResponseBuilder.result(ErrorCatalog._000, event));
         } catch (InternalServerException e) {
             throw e;
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Object> updateEvent(@PathVariable String id, @Valid @RequestBody EventRequest request) {
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<Object> updateEvent(@PathVariable String id, @ModelAttribute CreateEventRequest request)
+            throws IOException {
         try {
-            // Get existing event
-            Event event = eventService.getEventById(id);
-
-            // Update event
-            event.setTitle(request.getTitle());
-            event.setDescription(request.getDescription());
-            event.setCategory(request.getCategory());
-            event.setVenue(request.getVenue());
-            event.setEventDate(request.getEventDate());
-            event.setPrice(request.getPrice());
-            event.setCapacity(request.getCapacity());
-
-            // Update event
-            Event updatedEvent = eventService.updateEventById(id, event);
-
+            Event updatedEvent = eventService.updateEvent(id, request);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(apiResponseBuilder.result(ErrorCatalog._000, updatedEvent));
         } catch (InternalServerException e) {
@@ -163,17 +114,6 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.OK).body(apiResponseBuilder.result(ErrorCatalog._000));
         } catch (InternalServerException e) {
             throw e;
-        }
-    }
-
-    @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Event> createEvent(@Valid @ModelAttribute CreateEventRequest request) {
-        try {
-            Event event = eventService.createEvent(request);
-            return ResponseEntity.ok(event);
-
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
         }
     }
 

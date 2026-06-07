@@ -2,6 +2,7 @@ package com.hba.event_booking_service.controllers;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -184,5 +185,12 @@ public class BookingController {
         } catch (InternalServerException e) {
             throw e;
         }
+    }
+
+    @GetMapping("/reports")
+    public ResponseEntity<Object> getReports() {
+        Map<String, Object> reports = bookingService.generateReports();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(apiResponseBuilder.result(ErrorCatalog._000, reports));
     }
 }

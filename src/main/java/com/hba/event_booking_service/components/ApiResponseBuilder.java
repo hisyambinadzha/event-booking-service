@@ -40,6 +40,13 @@ public class ApiResponseBuilder {
         return responseInfo;
     }
 
+    private Response.ResponseInfo buildResponseInfo(String code, String message) {
+        Response.ResponseInfo responseInfo = new Response.ResponseInfo();
+        responseInfo.setCode(code);
+        responseInfo.setMessage(errorCatalog.get(code, message));
+        return responseInfo;
+    }
+
     private Generic wrapResponse(Response.Body body) {
         Response response = new Response();
         response.setHeader(buildHeader());
@@ -53,6 +60,17 @@ public class ApiResponseBuilder {
     public Generic result(String code) {
         Response.Body body = new Response.Body();
         body.setResponseInfo(buildResponseInfo(code));
+
+        return wrapResponse(body);
+    }
+
+    public Generic result(String code, String message) {
+        Response.Body body = new Response.Body();
+        body.setResponseInfo(buildResponseInfo(code, message));
+
+        if (message != null) {
+            body.addField("error", message);
+        }
 
         return wrapResponse(body);
     }

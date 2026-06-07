@@ -31,5 +31,6 @@ public class Event {
     private int seatsAvailable;
     private EventStatus status;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private String image;
 }

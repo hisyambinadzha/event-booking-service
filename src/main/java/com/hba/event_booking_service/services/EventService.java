@@ -1,7 +1,6 @@
 package com.hba.event_booking_service.services;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,10 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.hba.event_booking_service.dtos.CreateEventRequest;
-import com.hba.event_booking_service.enums.EventStatus;
 import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventNotFoundException;
 import com.hba.event_booking_service.exceptions.GlobalExceptionHandler.NotFoundException;
 import com.hba.event_booking_service.models.entities.Event;
@@ -39,16 +35,6 @@ public class EventService {
         logger.info("Found {} event categories", categories.size());
 
         return categories;
-    }
-
-    public Event createEvent(Event event) {
-        logger.info("Creating event with title: {}", event.getTitle());
-
-        Event newEvent = eventRepository.save(event);
-
-        logger.info("Created event with title: {}", newEvent.getTitle());
-
-        return newEvent;
     }
 
     public List<Event> getEvents() {
@@ -150,6 +136,49 @@ public class EventService {
         event.setImage(imagePath);
 
         return eventRepository.save(event);
+    }
+
+    public Event updateEvent(String eventId, CreateEventRequest request) throws IOException {
+        // ✅ Find existing event
+        Event existingEvent = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        // ✅ Validation
+        if (!existingEvent.getTitle().equals(request.getTitle()) &&
+                eventRepository.existsByTitle(request.getTitle())) {
+            throw new RuntimeException("Event title already exists");
+        }
+
+        if (request.getEventDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Event date cannot be in the past");
+        }
+
+        // ✅ Image handling
+        String imagePath = existingEvent.getImage(); // keep old image if not replaced
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String fileName = System.currentTimeMillis() + "_" + request.getImage().getOriginalFilename();
+            java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+
+            java.nio.file.Files.createDirectories(path.getParent());
+            java.nio.file.Files.write(path, request.getImage().getBytes());
+
+            imagePath = "/uploads/" + fileName;
+        }
+
+        // ✅ Update entity fields
+        existingEvent.setTitle(request.getTitle());
+        existingEvent.setDescription(request.getDescription());
+        existingEvent.setCategory(request.getCategory());
+        existingEvent.setVenue(request.getVenue());
+        existingEvent.setEventDate(request.getEventDate());
+        existingEvent.setPrice(request.getPrice());
+        existingEvent.setCapacity(request.getCapacity());
+        existingEvent.setSeatsAvailable(request.getCapacity()); // reset seats if capacity changes
+        existingEvent.setStatus(request.getStatus());
+        existingEvent.setImage(imagePath);
+        existingEvent.setUpdatedAt(LocalDateTime.now()); // add updated timestamp
+
+        return eventRepository.save(existingEvent);
     }
 
 }

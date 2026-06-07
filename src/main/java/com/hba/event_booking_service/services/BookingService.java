@@ -1,6 +1,8 @@
 package com.hba.event_booking_service.services;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,5 +75,15 @@ public class BookingService {
         logger.info("Updated booking with id: {}", id);
 
         return updatedBooking;
+    }
+
+    public Map<String, Object> generateReports() {
+        Map<String, Object> reports = new HashMap<>();
+        reports.put("totalBookings", bookingRepository.getTotalBookingsPerEvent());
+        reports.put("popularEvents", bookingRepository.getMostPopularEvents());
+        reports.put("revenue", bookingRepository.getRevenuePerEvent());
+        reports.put("monthlyTotals", bookingRepository.getMonthlyBookingTotals());
+        reports.put("seatsByCategory", bookingRepository.getSeatsSoldByCategory());
+        return reports;
     }
 }

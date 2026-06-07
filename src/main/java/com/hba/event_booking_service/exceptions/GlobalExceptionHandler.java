@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InternalServerException.class)
-    public ResponseEntity<Object> handleException(Exception ex) {
+    public ResponseEntity<Object> handleException(InternalServerException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(apiResponseBuilder.result(ErrorCatalog._999, ex.getMessage()));
     }
@@ -46,6 +46,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleNotFoundException(NotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(apiResponseBuilder.result(ErrorCatalog._110, ex.getMessage()));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Object> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(apiResponseBuilder.result(ErrorCatalog._900, ex.getMessage()));
     }
 
     public static class InternalServerException extends RuntimeException {
