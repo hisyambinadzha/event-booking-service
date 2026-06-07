@@ -71,7 +71,7 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getBooking(String id) {
+    public ResponseEntity<Object> getBooking(@PathVariable String id) {
         try {
             // Get booking
             Booking booking = bookingService.getBookingById(id);
@@ -171,7 +171,7 @@ public class BookingController {
                     if (role.equals("ADMIN")) {
                         booking.setBookingStatus(BookingStatus.REJECTED);
                     } else {
-                        throw new UpdateBookingException("Cannot update a cancelled booking.");
+                        throw new UpdateBookingException("Cannot update a approved booking.");
                     }
                     break;
                 default:

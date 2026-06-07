@@ -47,6 +47,9 @@ public class AppConfig {
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/api/auth/**", "/uploads/**", "/error").permitAll()
+                        // Profile
+                        .requestMatchers(HttpMethod.GET, "/api/auth/profile/**").authenticated()
+                        // Bookings
                         .requestMatchers(HttpMethod.GET, "/api/bookings/**").permitAll()
                         // Events
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
