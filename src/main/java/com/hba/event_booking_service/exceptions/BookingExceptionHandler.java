@@ -32,6 +32,11 @@ public class BookingExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponseBuilder.result(ErrorCatalog._109, ex.getMessage()));
     }
 
+    @ExceptionHandler(DuplicateBookingException.class)
+    public ResponseEntity<Object> handleDuplicateBookingException(DuplicateBookingException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiResponseBuilder.result(ErrorCatalog._111, ex.getMessage()));
+    }
+
     public static class BookingNotFoundException extends RuntimeException {
         public BookingNotFoundException() {
             super();
@@ -47,6 +52,12 @@ public class BookingExceptionHandler {
     public static class UpdateBookingException extends RuntimeException {
         public UpdateBookingException(String message) {
             super(message);
+        }
+    }
+
+    public static class DuplicateBookingException extends RuntimeException {
+        public DuplicateBookingException() {
+            super();
         }
     }
 }

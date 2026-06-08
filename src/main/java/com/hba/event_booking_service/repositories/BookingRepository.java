@@ -2,7 +2,6 @@ package com.hba.event_booking_service.repositories;
 
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
@@ -10,6 +9,8 @@ import com.hba.event_booking_service.models.entities.Booking;
 
 public interface BookingRepository extends MongoRepository<Booking, String> {
     List<Booking> findAllByUserId(String userId);
+
+    List<Booking> findAllByUserIdAndEventId(String userId, String eventId);
 
     @Aggregation({
         "{ $addFields: { eventObjId: { $toObjectId: '$eventId' } } }",

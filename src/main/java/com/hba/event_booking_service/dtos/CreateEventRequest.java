@@ -31,7 +31,7 @@ public class CreateEventRequest {
     private String venue;
 
     @NotNull(message = "Event date is required")
-    @Future(message = "Event date must be in the future")
+    // @Future(message = "Event date must be in the future")
     private LocalDateTime eventDate;
 
     @NotNull(message = "Price is required")

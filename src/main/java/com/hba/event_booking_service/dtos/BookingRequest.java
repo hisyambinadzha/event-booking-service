@@ -1,10 +1,5 @@
 package com.hba.event_booking_service.dtos;
 
-import java.time.LocalDateTime;
-
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
-
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -15,6 +10,4 @@ public class BookingRequest {
     private int numberOfSeats;
     @NotBlank(message = "Event ID is required")
     private String eventId;
-    @DateTimeFormat(iso = ISO.DATE_TIME)
-    private LocalDateTime bookingDate;
 }

@@ -1,6 +1,5 @@
 package com.hba.event_booking_service.controllers;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -20,21 +19,12 @@ import com.hba.event_booking_service.components.ApiResponseBuilder;
 import com.hba.event_booking_service.components.ErrorCatalog;
 import com.hba.event_booking_service.dtos.BookingRequest;
 import com.hba.event_booking_service.enums.BookingStatus;
-import com.hba.event_booking_service.enums.EventStatus;
-import com.hba.event_booking_service.exceptions.BookingExceptionHandler.SeatsNotAvailableException;
 import com.hba.event_booking_service.exceptions.BookingExceptionHandler.UpdateBookingException;
-import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventClosedException;
-import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventExpiredException;
-import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventFullException;
 import com.hba.event_booking_service.exceptions.GlobalExceptionHandler.InternalServerException;
 import com.hba.event_booking_service.models.entities.Booking;
-import com.hba.event_booking_service.models.entities.Event;
-import com.hba.event_booking_service.models.entities.User;
 import com.hba.event_booking_service.services.BookingService;
 import com.hba.event_booking_service.services.EventService;
 import com.hba.event_booking_service.services.JwtService;
-import com.hba.event_booking_service.services.UserService;
-
 import jakarta.validation.Valid;
 
 @RestController
@@ -42,18 +32,16 @@ import jakarta.validation.Valid;
 public class BookingController {
     private final BookingService bookingService;
     private final EventService eventService;
-    private final UserService userService;
     private final ApiResponseBuilder apiResponseBuilder;
     private final JwtService jwtService;
 
     @Value("${app.jwt.secret}")
     private String secretKey;
 
-    public BookingController(BookingService bookingService, EventService eventService, UserService userService,
+    public BookingController(BookingService bookingService, EventService eventService,
             ApiResponseBuilder apiResponseBuilder, JwtService jwtService) {
         this.bookingService = bookingService;
         this.eventService = eventService;
-        this.userService = userService;
         this.apiResponseBuilder = apiResponseBuilder;
         this.jwtService = jwtService;
     }
@@ -102,38 +90,7 @@ public class BookingController {
             String token = bearerToken.replace("Bearer ", "");
             String email = jwtService.extractUsername(token);
 
-            // Validate request
-            Event event = eventService.getEventById(request.getEventId());
-            if (event.getEventDate().compareTo(request.getBookingDate()) < 0) {
-                throw new EventExpiredException();
-            } else if (event.getStatus().equals(EventStatus.CLOSED)) {
-                throw new EventClosedException();
-            } else if (event.getSeatsAvailable() == 0) {
-                throw new EventFullException();
-            } else if (event.getSeatsAvailable() < request.getNumberOfSeats()) {
-                throw new SeatsNotAvailableException(String.valueOf(event.getSeatsAvailable()));
-            }
-
-            // Minus number of seats
-            event.setSeatsAvailable(event.getSeatsAvailable() - request.getNumberOfSeats());
-
-            // Update event
-            eventService.updateEventById(request.getEventId(), event);
-
-            // Search for user
-            User user = userService.getUserByEmail(email);
-
-            // Create booking
-            Booking booking = new Booking();
-            booking.setBookingDate(request.getBookingDate());
-            booking.setNumberOfSeats(request.getNumberOfSeats());
-            booking.setUserId(user.getId());
-            booking.setEventId(event.getId());
-            booking.setTotalPrice(event.getPrice().multiply(BigDecimal.valueOf(booking.getNumberOfSeats())));
-            booking.setBookingStatus(BookingStatus.PENDING);
-
-            // Save booking
-            Booking newBooking = bookingService.createBooking(booking);
+            Booking newBooking = bookingService.createBooking(email, request);
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(apiResponseBuilder.result(ErrorCatalog._000, newBooking));
@@ -161,6 +118,9 @@ public class BookingController {
                         booking.setBookingStatus(BookingStatus.APPROVED);
                     } else {
                         booking.setBookingStatus(BookingStatus.CANCELLED);
+                        
+                        // Update seats
+                        eventService.increaseEventSeats(booking.getEventId(), booking.getNumberOfSeats());
                     }
                     break;
                 case BookingStatus.CANCELLED:
@@ -170,6 +130,9 @@ public class BookingController {
                     // Check if user is admin
                     if (role.equals("ADMIN")) {
                         booking.setBookingStatus(BookingStatus.REJECTED);
+                        
+                        // Update seats
+                        eventService.increaseEventSeats(booking.getEventId(), booking.getNumberOfSeats());
                     } else {
                         throw new UpdateBookingException("Cannot update a approved booking.");
                     }

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -33,4 +34,6 @@ public class Event {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String image;
+    @Version
+    private Long version;
 }

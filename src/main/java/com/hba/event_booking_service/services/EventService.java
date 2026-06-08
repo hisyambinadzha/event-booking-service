@@ -8,7 +8,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.hba.event_booking_service.dtos.CreateEventRequest;
 import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventNotFoundException;
 import com.hba.event_booking_service.exceptions.GlobalExceptionHandler.NotFoundException;
@@ -19,9 +25,11 @@ import com.hba.event_booking_service.repositories.EventRepository;
 public class EventService {
     private final Logger logger = LoggerFactory.getLogger(EventService.class);
     private final EventRepository eventRepository;
+    private final MongoTemplate mongoTemplate;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, MongoTemplate mongoTemplate) {
         this.eventRepository = eventRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public List<String> getAllCategories() {
@@ -60,14 +68,20 @@ public class EventService {
         return event;
     }
 
-    public Event updateEventById(String id, Event event) {
-        logger.info("Updating event with id: {}", id);
+    @Transactional
+    public void decreaseEventSeats(String eventId, int seatsToSubtract) {
+        logger.info("Decreasing seats for event {}", eventId);
+        Query query = new Query(Criteria.where("_id").is(eventId));
+        Update update = new Update().inc("seatsAvailable", -seatsToSubtract);
+        mongoTemplate.updateFirst(query, update, Event.class);
+    }
 
-        Event updatedEvent = eventRepository.save(event);
-
-        logger.info("Updated event with id: {}", id);
-
-        return updatedEvent;
+    @Transactional
+    public void increaseEventSeats(String eventId, int seatsToAdd) {
+        logger.info("Increasing seats for event {}", eventId);
+        Query query = new Query(Criteria.where("_id").is(eventId));
+        Update update = new Update().inc("seatsAvailable", seatsToAdd);
+        mongoTemplate.updateFirst(query, update, Event.class);
     }
 
     public void deleteEventById(String id) {

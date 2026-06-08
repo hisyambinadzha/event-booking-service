@@ -22,6 +22,7 @@ public class ErrorCatalog {
     public static final String _108 = "108";
     public static final String _109 = "109";
     public static final String _110 = "110";
+    public static final String _111 = "111";
     public static final String _900 = "900";
     public static final String _999 = "999";
 
@@ -38,6 +39,7 @@ public class ErrorCatalog {
         errors.put(_108, "There are not enough seats available for your booking. \nSeats available: {0}");
         errors.put(_109, "You are not allowed to update your booking. \nReason: {0}");
         errors.put(_110, "Service return an empty result. \nReason: {0}");
+        errors.put(_111, "You have already booked this event.");
         errors.put(_900, "This operation is not allowed. \nReason: {0}");
         errors.put(_999, "An unexpected error has occurred.");
     }

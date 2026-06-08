@@ -1,5 +1,7 @@
 package com.hba.event_booking_service.services;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,28 +9,83 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.hba.event_booking_service.dtos.BookingRequest;
+import com.hba.event_booking_service.enums.BookingStatus;
+import com.hba.event_booking_service.enums.EventStatus;
 import com.hba.event_booking_service.exceptions.BookingExceptionHandler.BookingNotFoundException;
+import com.hba.event_booking_service.exceptions.BookingExceptionHandler.DuplicateBookingException;
+import com.hba.event_booking_service.exceptions.BookingExceptionHandler.SeatsNotAvailableException;
+import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventClosedException;
+import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventExpiredException;
+import com.hba.event_booking_service.exceptions.EventExceptionHandler.EventFullException;
 import com.hba.event_booking_service.models.entities.Booking;
+import com.hba.event_booking_service.models.entities.Event;
+import com.hba.event_booking_service.models.entities.User;
 import com.hba.event_booking_service.repositories.BookingRepository;
 
 @Service
 public class BookingService {
     private final Logger logger = LoggerFactory.getLogger(BookingService.class);
     private final BookingRepository bookingRepository;
+    private final EventService eventService;
+    private final UserService userService;
 
-    public BookingService(BookingRepository bookingRepository) {
+    public BookingService(BookingRepository bookingRepository, EventService eventService, UserService userService) {
         this.bookingRepository = bookingRepository;
+        this.eventService = eventService;
+        this.userService = userService;
     }
 
-    public Booking createBooking(Booking booking) {
-        logger.info("Creating booking for event: {}", booking.getEventId());
+    @Transactional
+    public Booking createBooking(String email, BookingRequest request) {
+        LocalDateTime today = LocalDateTime.now();
 
-        Booking newBooking = bookingRepository.save(booking);
+        // Fetch event
+        Event event = eventService.getEventById(request.getEventId());
 
-        logger.info("Created booking for event: {}", newBooking.getEventId());
+        // Validate event
+        if (event.getEventDate().compareTo(today) < 0) {
+            throw new EventExpiredException();
+        } else if (event.getStatus().equals(EventStatus.CLOSED)) {
+            throw new EventClosedException();
+        } else if (event.getSeatsAvailable() == 0) {
+            throw new EventFullException();
+        } else if (event.getSeatsAvailable() < request.getNumberOfSeats()) {
+            throw new SeatsNotAvailableException(String.valueOf(event.getSeatsAvailable()));
+        }
 
-        return newBooking;
+        // Find user
+        User user = userService.getUserByEmail(email);
+
+        // ✅ Check if user already booked this event
+        List<Booking> existingBookings = bookingRepository.findAllByUserIdAndEventId(user.getId(), event.getId());
+
+        boolean hasActiveBooking = existingBookings.stream()
+                .anyMatch(b -> b.getBookingStatus() == BookingStatus.PENDING
+                        || b.getBookingStatus() == BookingStatus.APPROVED);
+
+        if (hasActiveBooking) {
+            throw new DuplicateBookingException();
+        }
+
+        // Update seats
+        eventService.decreaseEventSeats(event.getId(), request.getNumberOfSeats());
+
+        // Create booking
+        Booking booking = new Booking();
+        booking.setBookingDate(today);
+        booking.setNumberOfSeats(request.getNumberOfSeats());
+        booking.setUserId(user.getId());
+        booking.setEventId(event.getId());
+        booking.setTotalPrice(event.getPrice().multiply(BigDecimal.valueOf(request.getNumberOfSeats())));
+        booking.setBookingStatus(BookingStatus.PENDING);
+
+        logger.info("Created booking for event: {}", booking.getEventId());
+
+        // Save booking
+        return bookingRepository.save(booking);
     }
 
     public List<Booking> getBookings() {
