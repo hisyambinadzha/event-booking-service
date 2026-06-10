@@ -17,6 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.hba.event_booking_service.components.ApiResponseBuilder;
 import com.hba.event_booking_service.components.JwtAuthenticationFilter;
 import com.hba.event_booking_service.services.CustomUserDetailsService;
 
@@ -24,11 +25,13 @@ import com.hba.event_booking_service.services.CustomUserDetailsService;
 public class AppConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
+    private final ApiResponseBuilder apiResponseBuilder;
 
     public AppConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-            CustomUserDetailsService customUserDetailsService) {
+            CustomUserDetailsService customUserDetailsService, ApiResponseBuilder apiResponseBuilder) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.apiResponseBuilder = apiResponseBuilder;
     }
 
     @Bean
@@ -45,6 +48,9 @@ public class AppConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .userDetailsService(customUserDetailsService)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint(apiResponseBuilder))
+                        .accessDeniedHandler(new CustomAccessDeniedHandler(apiResponseBuilder)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/api/auth/**", "/uploads/**", "/error").permitAll()
                         // Profile

@@ -19,7 +19,7 @@ public class BookingExceptionHandler {
 
     @ExceptionHandler(BookingNotFoundException.class)
     public ResponseEntity<Object> handleEventNotFoundException(BookingNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseBuilder.result(ErrorCatalog._103));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseBuilder.result(ErrorCatalog._112));
     }
 
     @ExceptionHandler(SeatsNotAvailableException.class)
