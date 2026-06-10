@@ -49,8 +49,14 @@ public class AppConfig {
                         .requestMatchers("/api/health", "/api/auth/**", "/uploads/**", "/error").permitAll()
                         // Profile
                         .requestMatchers(HttpMethod.GET, "/api/auth/profile/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/profile/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/auth/profile/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/auth/profile/**").hasRole("ADMIN")
                         // Bookings
                         .requestMatchers(HttpMethod.GET, "/api/bookings/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/bookings/**").hasRole("ADMIN")
                         // Events
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/events/**").authenticated()
