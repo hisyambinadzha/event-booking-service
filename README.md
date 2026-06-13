@@ -17,7 +17,7 @@ The **Event Booking Service** is a backend application built with **Spring Boot*
 
 ## 🚀 Features
 - **[User Registration](ca://s?q=Explain_user_registration_flow)**: Create new accounts with validation.
-- **[User Login](ca://s?q=Explain_user_login_flow)**: Authenticate users and return a session object.
+- **[User Login](ca://s?q=Explain_user_login_flow)**: Authenticate users and return a session object (JWT Tokens).
 - **[Profile Management](ca://s?q=Explain_profile_management)**: Fetch user details by email or ID.
 - **[Event Booking](ca://s?q=Explain_event_booking_flow)**: Users can book seats for events with validation on availability and event status.
 - **[Admin Bookings](ca://s?q=Explain_admin_booking_page)**: Admins can view all bookings in the system.
@@ -209,6 +209,35 @@ Provides status information.
 | **901** | Unauthorized. |
 | **902** | Forbidden. |
 | **999** | Unexpected error occurred. |
+
+
+## 📂 Seed Data
+
+The `seed` directory contains sample data or seed data that can be used to populate your MongoDB database with initial data.
+
+### 📌 Overview
+
+The seed data is stored in the [seed/events.json](cci:7://file:///c:/Users/Admin/Documents/Certified%20Full%20Stack%20Java%20with%20AI/Projects/seed/events.json:0:0-0:0) file and consists of a JSON array of event objects. Each event object contains the following fields:
+
+- `title`: The title of the event
+- `description`: A brief description of the event
+- `category`: The category of the event (e.g., `conference`, `concert`, `expo`)
+- `venue`: The venue or location of the event
+- `eventDate`: The date and time of the event
+- `price`: The price of the event
+- `capacity`: The maximum capacity of the event
+- `seatsAvailable`: The number of available seats
+- `status`: The status of the event (e.g., `DRAFT`, `OPEN`, `CLOSED`)
+- `createdAt`: The timestamp when the event was created
+- `image`: The URL of the event image
+
+### 🎛️ Importing Seed Data
+
+To import the seed data into your MongoDB database, you can use the following command:
+
+```bash
+./init-db-script.sh
+```
 
 ## 📝 License
 This project is for educational and development purposes. Extendable for production use with proper security and scalability enhancements.
